@@ -118,10 +118,10 @@ def normalize_alpr(
                 if ret_val is None:
                     print(f"Skipping {img_path}")
                 (top_left, width, height) = ret_val
-
+                img_suffix = img_path.as_posix().split(alpr_dir.as_posix())[1][1:]
                 img = {
                     "license": 4,
-                    "file_name": f"{img_path}",
+                    "file_name": f"{img_suffix}",
                     "coco_url": "TBD",
                     "height": pil_img.height,
                     "width": pil_img.width,

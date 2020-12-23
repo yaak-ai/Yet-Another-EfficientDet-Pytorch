@@ -149,8 +149,8 @@ def parse_fddb_gt(dets_file_name, isEllipse=False):
                 + minor_axis_radius ** 2 * math.cos(angle) ** 2
             )
             # bounding box
-            bbox_x = int(center_x - calc_x)
-            bbox_y = int(center_y - calc_y)
+            bbox_x = int(center_x)
+            bbox_y = int(center_y)
             bbox_w = int(2 * calc_x)
             bbox_h = int(2 * calc_y)
             det_dict[img_file].append([bbox_x, bbox_y, bbox_w, bbox_h])

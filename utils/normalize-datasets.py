@@ -3,8 +3,11 @@ from collections import namedtuple
 from pathlib import Path
 
 import json
+from PIL import Image
 from tqdm import tqdm
 import pandas as pd
+import numpy as np
+import csv
 
 IMAGE = namedtuple("image", "image_id path width height labels")
 ANNOTATION = namedtuple("annotation", "image_id XMin,XMax,YMin,YMax")
@@ -14,6 +17,7 @@ def normalize(
     info_csv,
     bbox_csv,
     classes_csv,
+    root_path,
     json_file_path,
     to_mscoco,
     to_openimages,
@@ -31,6 +35,7 @@ def normalize(
             info_csv,
             bbox_csv,
             classes_csv,
+            root_path,
             json_file_path,
         )
     else:
@@ -177,13 +182,108 @@ def normalize_openimages(
 def normalize_coco(
     info_csv,
     bbox_csv,
-    labels_csv,
     classes_csv,
+    root_path,
     json_file_path,
-    class_txt,
 ):
 
-    pass
+    print(f"Reading {json_file_path}")
+
+    with json_file_path.open() as pfile:
+        json_data = json.load(pfile)
+
+    print(f"Done reading {json_file_path}")
+
+    images = json_data["images"]
+    annotations = json_data["annotations"]
+    categories = json_data["categories"]
+    categories_dict = {}
+
+    for cat in categories:
+        categories_dict[cat["id"]] = cat["machine_name"]
+
+    info_pfile = info_csv.open("w")
+    info = csv.writer(info_pfile)
+    bbox_pfile = bbox_csv.open("w")
+    bboxes = csv.writer(bbox_pfile)
+    classes_pfile = classes_csv.open("w")
+    classes = csv.writer(classes_pfile)
+
+    for cl in categories:
+        classes.writerow([cl["machine_name"], cl["name"]])
+
+    classes_pfile.close()
+    print(f"Done writing {classes_csv}")
+
+    images_dict = {}
+    info.writerow(
+        [
+            "id",
+            "width",
+            "height",
+            "mean_r",
+            "mean_g",
+            "mean_b",
+            "std_r",
+            "std_g",
+            "std_b",
+        ]
+    )
+    for image in tqdm(images, ascii=True, unit="image"):
+        images_dict[image["id"]] = image
+        # img = Image.open(root_path.joinpath(image["file_name"])).convert("RGB")
+        # arr = np.array(img)
+        id = image["file_name"]
+        width, height = image["width"], image["height"]
+        # mean = np.mean(arr, axis=(0, 1))
+        # std = np.std(arr, axis=(0, 1))
+        info.writerow([id, width, height] + [0] * 5)
+        # img.close()
+    info_pfile.close()
+    print(f"Done writing {info_csv}")
+
+    bboxes.writerow(
+        [
+            "ImageID",
+            "Source",
+            "LabelName",
+            "Confidence",
+            "XMin",
+            "XMax",
+            "YMin",
+            "YMax",
+            "IsOccluded",
+            "IsTruncated",
+            "IsGroupOf",
+            "IsDepiction",
+            "IsInside",
+        ]
+    )
+    for ann in tqdm(annotations, ascii=True, unit="ann"):
+
+        image_id = ann["image_id"]
+        label_name = categories_dict[ann["category_id"]]
+        xmin = ann["bbox"][0] / images_dict[image_id]["width"]
+        ymin = ann["bbox"][1] / images_dict[image_id]["height"]
+        xmax = (xmin + ann["bbox"][2]) / images_dict[image_id]["width"]
+        ymax = (ymin + ann["bbox"][3]) / images_dict[image_id]["height"]
+
+        bboxes.writerow(
+            [
+                images_dict[image_id]["file_name"],
+                "multiple",
+                label_name,
+                1,
+                xmin,
+                xmax,
+                ymin,
+                ymax,
+            ]
+            + [0] * 5
+        )
+
+    bbox_pfile.close()
+    print(f"Done writing {bbox_csv}")
 
 
 if __name__ == "__main__":
@@ -213,6 +313,13 @@ if __name__ == "__main__":
         type=Path,
     )
     parser.add_argument(
+        "-r",
+        "--root",
+        type=Path,
+        dest="root_path",
+        help="Root dataset patg",
+    )
+    parser.add_argument(
         "-d",
         "--destination",
         type=Path,
@@ -222,7 +329,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--to-mscoco",
         action="store_true",
-        default=True,
+        default=False,
         dest="to_mscoco",
         help="Convert to MSCOCO style data format",
     )
@@ -239,6 +346,7 @@ if __name__ == "__main__":
         args.info_csv,
         args.bbox_csv,
         args.classes_csv,
+        args.root_path,
         args.json_path,
         args.to_mscoco,
         args.to_openimages,

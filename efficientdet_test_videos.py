@@ -135,7 +135,7 @@ input_size = (
 )
 
 # load model
-model_weights = "/nas/team-space/experiments/pii/efficient-det/14-12-2020/OpenImagesV6/efficientdet-d0_9_52640.pth"
+model_weights = "/nas/team-space/experiments/pii/efficient-det/17-12-2020/OpenImagesV6/efficientdet-d0_48_509000.pth"
 model = EfficientDetBackbone(compound_coef=compound_coef, num_classes=len(obj_list))
 model.load_state_dict(torch.load(model_weights))
 model.requires_grad_(False)
@@ -207,10 +207,6 @@ for frame in pbar:
             threshold,
             iou_threshold,
         )
-
-        import pdb
-
-        pdb.set_trace()
 
     # result
     out = invert_affine(framed_metas, out)
