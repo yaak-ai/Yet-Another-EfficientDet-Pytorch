@@ -16,6 +16,7 @@ import os
 import argparse
 import torch
 import yaml
+from random import shuffle
 from tqdm import tqdm
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
@@ -54,6 +55,7 @@ ap.add_argument(
 ap.add_argument("--cuda", type=boolean_string, default=False)
 ap.add_argument("--device", type=int, default=0)
 ap.add_argument("--float16", type=boolean_string, default=False)
+ap.add_argument("--max-images", type=int, default=10000)
 ap.add_argument(
     "--override",
     type=boolean_string,
@@ -76,6 +78,7 @@ weights_path = (
     if args.weights is None
     else args.weights
 )
+max_images = args.max_images
 
 print(
     f"running coco-style evaluation on project {project_name}, weights {weights_path}..."
@@ -93,7 +96,9 @@ def evaluate_coco(img_path, set_name, image_ids, coco, model, threshold=0.05):
     regressBoxes = BBoxTransform()
     clipBoxes = ClipBoxes()
 
-    for image_id in tqdm(image_ids, ascii=True, unit="samples"):
+    pbar = tqdm(image_ids, ascii=True, unit="samples")
+
+    for image_id in pbar:
         image_info = coco.loadImgs(image_id)[0]
         image_path = img_path + image_info["file_name"]
 
@@ -193,9 +198,10 @@ if __name__ == "__main__":
     SET_NAME = params["val_set"]
     VAL_GT = f'{dataset}/{params["project_name"]}/annotations/instances_{SET_NAME}.json'
     VAL_IMGS = f'{dataset}/{params["project_name"]}/{SET_NAME}/'
-    MAX_IMAGES = 10000
     coco_gt = COCO(VAL_GT)
-    image_ids = coco_gt.getImgIds()[:MAX_IMAGES]
+    image_ids = coco_gt.getImgIds()
+    shuffle(image_ids)
+    image_ids = image_ids[:max_images]
 
     if override_prev_results or not os.path.exists(f"{SET_NAME}_bbox_results.json"):
         model = EfficientDetBackbone(

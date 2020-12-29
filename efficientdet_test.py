@@ -7,6 +7,7 @@ import time
 import torch
 from torch.backends import cudnn
 from matplotlib import colors
+import argparse
 
 from backbone import EfficientDetBackbone
 import cv2
@@ -23,15 +24,26 @@ from utils.utils import (
     plot_one_box,
 )
 
+ap = argparse.ArgumentParser()
+
+ap.add_argument(
+    "-w", "--weights", type=str, dest="weights", required=True, help="/path/to/weights"
+)
+ap.add_argument("--test-image", dest="test_image", type=str, required=True)
+ap.add_argument("--threshold", dest="threshold", type=float, default=0.2)
+
+args = ap.parse_args()
+
 compound_coef = 0
 force_input_size = None  # set None to use default size
-img_path = "/home/perception/workspace/OpenImagesV6/validation/b076ad266891d7aa.jpg"
+img_path = args.test_image
 
 # replace this part with your project's anchor config
 anchor_ratios = [(1.0, 1.0), (1.4, 0.7), (0.7, 1.4)]
-anchor_scales = [2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]
+# anchor_scales = [2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]
+anchor_scales = [0.3, 0.5, 0.8, 2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]
 
-threshold = 0.2
+threshold = args.threshold
 iou_threshold = 0.2
 
 use_cuda = False
@@ -156,7 +168,7 @@ model = EfficientDetBackbone(
     ratios=anchor_ratios,
     scales=anchor_scales,
 )
-model_weights = "/nas/team-space/experiments/pii/efficient-det/15-12-2020/OpenImagesV6/efficientdet-d0_12_134000.pth"
+model_weights = args.weights
 model.load_state_dict(torch.load(model_weights, map_location="cpu"))
 model.requires_grad_(False)
 model.eval()
@@ -196,6 +208,7 @@ def display(preds, imgs, imshow=True, imwrite=False):
 
         for j in range(len(preds[i]["rois"])):
             x1, y1, x2, y2 = preds[i]["rois"][j].astype(np.int)
+            print(f"object {x2 - x1 + 1} x {y2 - y1 + 1}")
             obj = obj_list[preds[i]["class_ids"][j]]
             score = float(preds[i]["scores"][j])
             plot_one_box(

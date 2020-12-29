@@ -237,7 +237,7 @@ def normalize_coco(
         width, height = image["width"], image["height"]
         # mean = np.mean(arr, axis=(0, 1))
         # std = np.std(arr, axis=(0, 1))
-        info.writerow([id, width, height] + [0] * 5)
+        info.writerow([id, width, height] + [0] * 6)
         # img.close()
     info_pfile.close()
     print(f"Done writing {info_csv}")
