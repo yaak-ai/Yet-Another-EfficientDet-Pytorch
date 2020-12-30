@@ -46,105 +46,12 @@ anchor_scales = [0.3, 0.5, 0.8, 2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]
 threshold = args.threshold
 iou_threshold = 0.2
 
-use_cuda = False
-use_float16 = False
-cudnn.fastest = False
-cudnn.benchmark = False
+use_cuda = True
+use_float16 = True
+cudnn.fastest = True
+cudnn.benchmark = True
 
 obj_list = ["Vehicle registration plate", "Human face"]
-
-# obj_list = [
-#     "person",
-#     "bicycle",
-#     "car",
-#     "motorcycle",
-#     "airplane",
-#     "bus",
-#     "train",
-#     "truck",
-#     "boat",
-#     "traffic light",
-#     "fire hydrant",
-#     "",
-#     "stop sign",
-#     "parking meter",
-#     "bench",
-#     "bird",
-#     "cat",
-#     "dog",
-#     "horse",
-#     "sheep",
-#     "cow",
-#     "elephant",
-#     "bear",
-#     "zebra",
-#     "giraffe",
-#     "",
-#     "backpack",
-#     "umbrella",
-#     "",
-#     "",
-#     "handbag",
-#     "tie",
-#     "suitcase",
-#     "frisbee",
-#     "skis",
-#     "snowboard",
-#     "sports ball",
-#     "kite",
-#     "baseball bat",
-#     "baseball glove",
-#     "skateboard",
-#     "surfboard",
-#     "tennis racket",
-#     "bottle",
-#     "",
-#     "wine glass",
-#     "cup",
-#     "fork",
-#     "knife",
-#     "spoon",
-#     "bowl",
-#     "banana",
-#     "apple",
-#     "sandwich",
-#     "orange",
-#     "broccoli",
-#     "carrot",
-#     "hot dog",
-#     "pizza",
-#     "donut",
-#     "cake",
-#     "chair",
-#     "couch",
-#     "potted plant",
-#     "bed",
-#     "",
-#     "dining table",
-#     "",
-#     "",
-#     "toilet",
-#     "",
-#     "tv",
-#     "laptop",
-#     "mouse",
-#     "remote",
-#     "keyboard",
-#     "cell phone",
-#     "microwave",
-#     "oven",
-#     "toaster",
-#     "sink",
-#     "refrigerator",
-#     "",
-#     "book",
-#     "clock",
-#     "vase",
-#     "scissors",
-#     "teddy bear",
-#     "hair drier",
-#     "toothbrush",
-# ]
 
 
 color_list = standard_to_bgr(STANDARD_COLORS)
@@ -208,9 +115,9 @@ def display(preds, imgs, imshow=True, imwrite=False):
 
         for j in range(len(preds[i]["rois"])):
             x1, y1, x2, y2 = preds[i]["rois"][j].astype(np.int)
-            print(f"object {x2 - x1 + 1} x {y2 - y1 + 1}")
             obj = obj_list[preds[i]["class_ids"][j]]
             score = float(preds[i]["scores"][j])
+            print(f"object {x2 - x1 + 1} x {y2 - y1 + 1} — {score}")
             plot_one_box(
                 imgs[i],
                 [x1, y1, x2, y2],
@@ -257,13 +164,13 @@ with torch.no_grad():
     print(f"{tact_time} seconds, {1 / tact_time} FPS, @batch_size 1")
 
     # uncomment this if you want a extreme fps test
-    # print('test2: model inferring only')
-    # print('inferring images for batch_size 32 for 10 times...')
-    # t1 = time.time()
-    # x = torch.cat([x] * 32, 0)
-    # for _ in range(10):
-    #     _, regression, classification, anchors = model(x)
-    #
-    # t2 = time.time()
-    # tact_time = (t2 - t1) / 10
-    # print(f'{tact_time} seconds, {32 / tact_time} FPS, @batch_size 32')
+    print("test2: model inferring only")
+    print("inferring images for batch_size 32 for 10 times...")
+    t1 = time.time()
+    x = torch.cat([x] * 32, 0)
+    for _ in range(10):
+        _, regression, classification, anchors = model(x)
+
+    t2 = time.time()
+    tact_time = (t2 - t1) / 10
+    print(f"{tact_time} seconds, {32 / tact_time} FPS, @batch_size 32")

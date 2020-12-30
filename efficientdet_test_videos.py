@@ -20,7 +20,7 @@ import torch
 from skvideo.io import ffprobe, vreader, FFmpegWriter
 
 # Video's path
-video_src = "/nas/drives/yaak/83/cam_front_left.mp4"  # set int to use webcam, set str to read from a video file
+video_src = "/home/perception/Downloads/cam_front_left.mp4"  # set int to use webcam, set str to read from a video file
 
 compound_coef = 0
 force_input_size = None  # set None to use default size
@@ -134,9 +134,20 @@ input_size = (
     input_sizes[compound_coef] if force_input_size is None else force_input_size
 )
 
+# replace this part with your project's anchor config
+anchor_ratios = [(1.0, 1.0), (1.4, 0.7), (0.7, 1.4)]
+# anchor_scales = [2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]
+anchor_scales = [0.3, 0.5, 0.8, 2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]
+
+
 # load model
-model_weights = "/nas/team-space/experiments/pii/efficient-det/17-12-2020/OpenImagesV6/efficientdet-d0_48_509000.pth"
-model = EfficientDetBackbone(compound_coef=compound_coef, num_classes=len(obj_list))
+model_weights = "./weights/efficientdet-d0_44_1060000.pth"
+model = EfficientDetBackbone(
+    compound_coef=compound_coef,
+    num_classes=len(obj_list),
+    ratios=anchor_ratios,
+    scales=anchor_scales,
+)
 model.load_state_dict(torch.load(model_weights))
 model.requires_grad_(False)
 model.eval()
@@ -210,9 +221,9 @@ for frame in pbar:
 
     # result
     out = invert_affine(framed_metas, out)
-    img_show = display(out, ori_imgs)
-
-    # show frame by frame
-    cv2.imshow("frame", img_show)
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
+    # img_show = display(out, ori_imgs)
+    #
+    # # show frame by frame
+    # cv2.imshow("frame", img_show)
+    # if cv2.waitKey(1) & 0xFF == ord("q"):
+    #     break
