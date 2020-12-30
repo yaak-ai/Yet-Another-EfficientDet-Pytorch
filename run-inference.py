@@ -172,7 +172,13 @@ def inference_fn(model, model_frame_queue, detections_queue):
 
 
 def redact_fn(
-    queue_frame, queue_detection, video_file_path, fps, threshold, input_size
+    queue_frame,
+    queue_detection,
+    video_file_path,
+    fps,
+    threshold,
+    input_size,
+    video_resolution,
 ):
 
     """
@@ -196,7 +202,7 @@ def redact_fn(
         },
     )
 
-    metas = get_metas((1080, 1920, 3), input_size, input_size)
+    metas = get_metas(video_resolution, input_size, input_size)
 
     while True:
         frames = queue_frame.get()
@@ -304,6 +310,7 @@ def redact(
             metadata.fps,
             threshold,
             input_size,
+            (metadata.height, metadata.width, 3),
         ),
     )
     t2.start()
